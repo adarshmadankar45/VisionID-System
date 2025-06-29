@@ -1,0 +1,38 @@
+{% extends 'login/base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">Criminal Details</h1>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h2 class="card-title">{{ criminal.first_name }}
+                {% if criminal.middle_name %}{{ criminal.middle_name }} {% endif %}
+                {{ criminal.last_name }}
+            </h2>
+            <p class="card-text">
+                <strong>DOB:</strong> {{ criminal.dob }}<br>
+                <strong>Age:</strong> {{ criminal.age }}<br>
+                <strong>Gender:</strong> {{ criminal.get_gender_display }}
+            </p>
+        </div>
+    </div>
+
+    <h3 class="mb-3">Images</h3>
+    <div class="row">
+        {% for image in images %}
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <img src="{{ image.image.url }}" class="card-img-top" alt="Criminal Image">
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-warning">No images available for this criminal.</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <a href="{% url 'search_criminal' %}" class="btn btn-primary">Back to Search</a>
+</div>
+{% endblock %}

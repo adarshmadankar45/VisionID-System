@@ -1,0 +1,50 @@
+{% extends 'login/base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">Search Criminals</h1>
+    
+    <form method="get" class="mb-4">
+        <div class="input-group">
+            <input type="text" name="q" class="form-control" placeholder="Search by name..." value="{{ query }}">
+            <div class="input-group-append">
+                <button class="btn btn-primary" type="submit">Search</button>
+            </div>
+        </div>
+    </form>
+
+    {% if results %}
+        <div class="row">
+            {% for criminal in results %}
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    {% if criminal.images.all %}
+                        <img src="{{ criminal.images.first.image.url }}" class="card-img-top" alt="{{ criminal }}">
+                    {% else %}
+                        <div class="no-image-placeholder bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                            <span>No Image Available</span>
+                        </div>
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">{{ criminal.first_name }} 
+                            {% if criminal.middle_name %}{{ criminal.middle_name }} {% endif %}
+                            {{ criminal.last_name }}
+                        </h5>
+                        <p class="card-text">
+                            <strong>DOB:</strong> {{ criminal.dob }}<br>
+                            <strong>Age:</strong> {{ criminal.age }}<br>
+                            <strong>Gender:</strong> {{ criminal.get_gender_display }}
+                        </p>
+                        <a href="{% url 'criminal_detail' criminal.id %}" class="btn btn-info">View Details</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% elif query %}
+        <div class="alert alert-warning">No criminals found matching your search.</div>
+    {% else %}
+        <div class="alert alert-info">Enter a name to search for criminals.</div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,177 @@
+{% extends 'login/base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Criminal Image Search</h2>
+        <div class="alert alert-info mb-0 py-2">
+            <i class="fas fa-info-circle me-2"></i>
+            Total criminals in database: {{ total_criminals }}
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data" id="searchForm" class="row g-3">
+    {% csrf_token %}
+    <div class="col-md-8">
+        <label class="form-label">Search by Images:</label>
+        <input type="file" name="image" required class="form-control" accept="image/*" multiple>
+        <small class="text-muted">Upload multiple photos to find matching criminal records (JPEG, PNG)</small>
+    </div>
+    <div class="col-md-4 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary w-100">
+            <i class="fas fa-search me-2"></i> Search
+        </button>
+    </div>
+</form>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-danger d-flex align-items-center">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <div>{{ error }}</div>
+    </div>
+    {% endif %}
+
+    {% if search_performed %}
+    <div class="card">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Matching Results ({{ results|length }})</h5>
+            {% if results %}
+            <span class="badge bg-primary">
+                Highest match: {{ results.0.confidence }}%
+            </span>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            {% if results %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Photo</th>
+                            <th>Name</th>
+                            <th>Age</th>
+                            <th>Gender</th>
+                            <th>Match %</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for result in results %}
+                        <tr>
+                            <td>
+                                {% if result.image %}
+                                <img src="{{ result.image }}" class="img-thumbnail" style="width: 80px; height: 80px; object-fit: cover;">
+                                {% else %}
+                                <div class="no-image text-muted d-flex align-items-center justify-content-center" style="width: 80px; height: 80px; background: #f8f9fa; border-radius: 8px;">
+                                    <i class="fas fa-user-slash fa-2x"></i>
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <strong>{{ result.criminal.first_name }} {{ result.criminal.last_name }}</strong>
+                                {% if result.criminal.middle_name %}
+                                <div class="text-muted small">{{ result.criminal.middle_name }}</div>
+                                {% endif %}
+                            </td>
+                            <td>{{ result.criminal.age }}</td>
+                            <td>
+                                <span class="badge 
+                                    {% if result.criminal.gender == 'M' %}bg-info
+                                    {% elif result.criminal.gender == 'F' %}bg-purple
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ result.criminal.get_gender_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar 
+                                        {% if result.confidence > 75 %}bg-success
+                                        {% elif result.confidence > 50 %}bg-warning
+                                        {% else %}bg-danger{% endif %}" 
+                                        role="progressbar" 
+                                        style="width: {{ result.confidence }}%" 
+                                        aria-valuenow="{{ result.confidence }}" 
+                                        aria-valuemin="0" 
+                                        aria-valuemax="100">
+                                        {{ result.confidence }}%
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                <form method="post" class="add-image-form" data-criminal-id="{{ result.criminal.id }}">
+                    {% csrf_token %}
+                    <input type="hidden" name="add_criminal_id" value="{{ result.criminal.id }}">
+                    <button type="button" class="btn btn-sm btn-success add-image-btn">
+                        <i class="fas fa-plus me-1"></i> Add This Image
+                    </button>
+                </form>
+            </td>
+        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info d-flex align-items-center">
+                <i class="fas fa-info-circle me-2"></i>
+                <div>No matching records found. Try with a different image.</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle add images button clicks
+    document.querySelectorAll('.add-image-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const form = this.closest('form');
+            const criminalId = form.dataset.criminalId;
+            const submitBtn = this;
+
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Adding...';
+            submitBtn.disabled = true;
+
+            fetch("{% url 'dashboard' %}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: `add_criminal_id=${criminalId}`
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    alert(data.message);
+                    window.location.href = "{% url 'dashboard' %}";
+                } else {
+                    throw new Error(data.message || 'Failed to add images');
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error.message);
+            })
+            .finally(() => {
+                submitBtn.innerHTML = '<i class="fas fa-plus me-1"></i> Add These Images';
+                submitBtn.disabled = false;
+            });
+        });
+    });
+});
+</script>
+
+{% endblock %}

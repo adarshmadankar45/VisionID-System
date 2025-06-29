@@ -1,0 +1,107 @@
+{% extends 'login/base.html' %}
+<head>
+
+</head>
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-user-plus me-2"></i>Add Criminal Record</h2>
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="id_first_name" class="form-label">First Name*</label>
+                        <input type="text" class="form-control" id="id_first_name" name="first_name" required>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="id_last_name" class="form-label">Last Name*</label>
+                        <input type="text" class="form-control" id="id_last_name" name="last_name" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="id_middle_name" class="form-label">Middle Name (Optional)</label>
+                    <input type="text" class="form-control" id="id_middle_name" name="middle_name">
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="id_dob" class="form-label">Date of Birth*</label>
+                        <input type="date" class="form-control" id="id_dob" name="dob" required onchange="calculateAge(this.value)">
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="id_age" class="form-label">Age (Auto-calculated)</label>
+                        <input type="text" class="form-control" id="id_age" name="age" readonly>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Gender*</label>
+                    <div class="d-flex gap-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="gender" id="male" value="M" required>
+                            <label class="form-check-label" for="male">Male</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="gender" id="female" value="F">
+                            <label class="form-check-label" for="female">Female</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="gender" id="other" value="O">
+                            <label class="form-check-label" for="other">Other</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="id_images" class="form-label">Upload Images (Multiple)*</label>
+                    <input class="form-control" type="file" id="id_images" name="images" multiple required>
+                    <div class="form-text">You can select multiple files (JPEG, PNG)</div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Submit Criminal Record
+                    </button>
+                    <a href="{% url 'dashboard' %}" class="btn btn-outline-danger">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function calculateAge(dob) {
+        if (!dob) return;
+
+        const birthDate = new Date(dob);
+        const today = new Date();
+
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+
+        document.getElementById('id_age').value = age;
+    }
+
+    // Set maximum date to today for date of birth
+    document.addEventListener('DOMContentLoaded', function() {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('id_dob').setAttribute('max', today);
+    });
+</script>
+{% endblock %}
